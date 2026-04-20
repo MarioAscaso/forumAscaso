@@ -62,7 +62,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authToken);
 
         } catch (Exception e) {
-            // Si el token es falso, ha caducado o está modificado, limpiamos el contexto
+            // ESTO TE DIRÁ POR QUÉ FALLA EN LA CONSOLA DE INTELLIJ
+            System.out.println("Error validando token: " + e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

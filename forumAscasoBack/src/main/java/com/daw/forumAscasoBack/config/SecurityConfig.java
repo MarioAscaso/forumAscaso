@@ -18,7 +18,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
-    // Inyectamos nuestro nuevo filtro
+    // Inyectamos el filtro JWT que creamos para procesar los tokens
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
@@ -26,19 +26,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // Deshabilitamos CSRF ya que las APIs REST con JWT son "stateless"
                 .csrf(AbstractHttpConfigurer::disable)
-                // IMPORTANTE: Le decimos a Spring que no guarde sesiones en memoria, usaremos 100% Tokens
+
+                // Configuramos la gestión de sesiones como sin estado
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // Permitimos el acceso público al registro y al login
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
 
-                        // REGLA CLAVE: Para crear, modificar o borrar salas, OBLIGATORIO ser SUPERADMIN
-                        .requestMatchers("/api/rooms/**").hasRole("SUPERADMIN")
+                        // Protegemos el CRUD de salas: Solo accesible para el rol SUPERADMIN
+                        // Hemos añadido "/api/rooms" explícitamente para evitar errores 403 en la ruta base
+                        .requestMatchers("/api/rooms", "/api/rooms/**").hasRole("SUPERADMIN")
 
+                        // Cualquier otra petición requiere autenticación previa
                         .anyRequest().authenticated()
                 )
-                // Colocamos nuestro filtro JWT ANTES del filtro por defecto de Spring
+                // Añadimos nuestro filtro personalizado antes del filtro de autenticación estándar
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -46,6 +51,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        // Definimos el bean para encriptar contraseñas con BCrypt
         return new BCryptPasswordEncoder();
     }
 }
