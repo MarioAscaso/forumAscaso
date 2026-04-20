@@ -3,6 +3,7 @@ package com.daw.forumAscasoBack.config;
 import com.daw.forumAscasoBack.config.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,8 +37,10 @@ public class SecurityConfig {
                         // Permitimos el acceso público al registro y al login
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
 
-                        // Protegemos el CRUD de salas: Solo accesible para el rol SUPERADMIN
-                        // Hemos añadido "/api/rooms" explícitamente para evitar errores 403 en la ruta base
+                        // TODOS los usuarios logueados pueden VER las salas (GET)
+                        .requestMatchers(HttpMethod.GET, "/api/rooms").authenticated()
+
+                        // Solo el SUPERADMIN puede CREAR (POST), MODIFICAR (PUT) o BORRAR (DELETE) salas
                         .requestMatchers("/api/rooms", "/api/rooms/**").hasRole("SUPERADMIN")
 
                         // Cualquier otra petición requiere autenticación previa
