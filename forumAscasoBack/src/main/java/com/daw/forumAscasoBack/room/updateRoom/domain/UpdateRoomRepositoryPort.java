@@ -1,5 +1,4 @@
 package com.daw.forumAscasoBack.room.updateRoom.domain;
-
 import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.RoomJpaEntity;
 import java.util.Optional;
 

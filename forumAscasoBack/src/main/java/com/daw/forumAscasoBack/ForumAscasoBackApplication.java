@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ForumAscasoBackApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ForumAscasoBackApplication.class, args);
+		SpringApplication.run(ForumAscasoBackApplication.class, args); 
 	}
 
 }
