@@ -46,6 +46,8 @@ public class SecurityConfig {
                         // TODOS los usuarios logueados pueden VER las salas (GET)
                         .requestMatchers(HttpMethod.GET, "/api/rooms").authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/api/messages/room/**").authenticated()
+
                         // Solo el SUPERADMIN puede CREAR (POST), MODIFICAR (PUT) o BORRAR (DELETE) salas
                         .requestMatchers("/api/rooms", "/api/rooms/**").hasRole("SUPERADMIN")
 

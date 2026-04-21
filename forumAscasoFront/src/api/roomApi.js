@@ -14,3 +14,7 @@ api.interceptors.request.use(config => {
 });
 
 export const fetchRooms = () => api.get('/rooms');
+
+export const fetchMessagesByRoom = (roomId) => api.get(`/messages/room/${roomId}`);
+
+export const createMessage = (roomId, content) => api.post(`/messages/room/${roomId}`, { content });
