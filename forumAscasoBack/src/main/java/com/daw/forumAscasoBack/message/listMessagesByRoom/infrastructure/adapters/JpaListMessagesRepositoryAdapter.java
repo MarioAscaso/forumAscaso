@@ -19,15 +19,23 @@ public class JpaListMessagesRepositoryAdapter implements ListMessagesRepositoryP
 
     @Override
     public List<Message> findByRoomId(Long roomId) {
-        // Buscamos en la BBDD y mapeamos cada entidad al objeto de dominio puro
-        return springDataRepository.findByRoom_IdOrderByCreationDateAsc(roomId)
+        return springDataRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "APPROVED")
+                // ... (deja tu map igual que lo tenías)
+                .stream().map(entity -> new Message(entity.getId(), entity.getContent(), entity.getCreationDate(), entity.getRoom().getId(), entity.getAuthor().getUsername(), entity.getStatus())).collect(Collectors.toList());
+    }
+
+    // AÑADE ESTE NUEVO MÉTODO:
+    @Override
+    public List<Message> findPendingByRoomId(Long roomId) {
+        return springDataRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "PENDING")
                 .stream()
                 .map(entity -> new Message(
                         entity.getId(),
                         entity.getContent(),
                         entity.getCreationDate(),
                         entity.getRoom().getId(),
-                        entity.getAuthor().getUsername() // Sacamos solo el nombre del autor
+                        entity.getAuthor().getUsername(),
+                        entity.getStatus()
                 ))
                 .collect(Collectors.toList());
     }

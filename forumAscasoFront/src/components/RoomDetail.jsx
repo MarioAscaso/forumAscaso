@@ -1,104 +1,108 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchMessagesByRoom, createMessage } from '../api/roomApi'; // Importamos createMessage
+import { fetchMessagesByRoom, createMessage, fetchPendingMessages, updateMessageStatus } from '../api/roomApi';
+
+// NUEVO: Función para descifrar el JWT y sacar el rol
+const getUserRole = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    // Decodificamos la parte central del JWT (el payload)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+    
+    console.log("Datos del token:", payload); // <-- Útil para ver qué datos te manda Java
+    
+    // Spring Security suele guardar el rol en "role", "roles" o "authorities"
+    // Lo pasamos todo a texto para buscar fácilmente
+    const rolesString = JSON.stringify(payload); 
+    
+    if (rolesString.includes('SUPERADMIN') || rolesString.includes('MODERATOR')) {
+      return 'ADMIN_OR_MOD';
+    }
+    return 'PARTICIPANT';
+  } catch (error) {
+    console.error("Error al leer el token", error);
+    return 'PARTICIPANT';
+  }
+};
 
 function RoomDetail() {
   const { id } = useParams();
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Nuevo estado para el mensaje que estamos escribiendo
+  const [pendingMessages, setPendingMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [sending, setSending] = useState(false);
+  
+  // NUEVO: Guardamos el rol del usuario actual
+  const userRole = getUserRole();
+  const canModerate = userRole === 'ADMIN_OR_MOD';
 
-  // Función para cargar los mensajes (la sacamos fuera para poder reutilizarla)
   const loadMessages = () => {
-    fetchMessagesByRoom(id)
-      .then(res => {
-        setMessages(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error al cargar mensajes:", err);
-        setError("No se pudieron cargar los mensajes.");
-        setLoading(false);
-      });
+    fetchMessagesByRoom(id).then(res => setMessages(res.data)).catch(console.error);
+    
+    // NUEVO: Solo pedimos los mensajes pendientes si el usuario tiene permisos
+    if (canModerate) {
+      fetchPendingMessages(id).then(res => setPendingMessages(res.data)).catch(console.error);
+    }
   };
 
-  useEffect(() => {
-    loadMessages();
-  }, [id]);
+  useEffect(() => { loadMessages(); }, [id]);
 
-  // Función para enviar el mensaje nuevo
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return; // No enviar mensajes vacíos
-
-    setSending(true);
+    if (!newMessage.trim()) return;
     try {
       await createMessage(id, newMessage);
-      setNewMessage(''); // Limpiamos la caja de texto
-      loadMessages(); // Recargamos los mensajes para ver el nuestro
+      setNewMessage('');
+      loadMessages(); 
+      alert("Mensaje enviado. Si la sala es moderada, espera a su aprobación.");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleModerate = async (messageId, status) => {
+    try {
+      await updateMessageStatus(messageId, status);
+      loadMessages(); 
     } catch (err) {
-      console.error("Error al enviar el mensaje:", err);
-      alert("Hubo un error al enviar el mensaje.");
-    } finally {
-      setSending(false);
+      console.error("Error al moderar:", err);
     }
   };
 
   return (
     <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
-      <Link to="/">
-        <button style={{ marginBottom: '20px', cursor: 'pointer' }}>← Volver a las salas</button>
-      </Link>
-      
+      <Link to="/"><button style={{ marginBottom: '20px' }}>← Volver</button></Link>
       <h2>Sala de Chat</h2>
 
-      {/* Zona de Mensajes */}
-      <div style={{ border: '1px solid #ccc', borderRadius: '5px', padding: '20px', minHeight: '300px', backgroundColor: '#f9f9f9', marginBottom: '20px', maxHeight: '500px', overflowY: 'auto' }}>
-        {loading && <p>Cargando mensajes...</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        
-        {!loading && !error && messages.length === 0 && (
-          <p style={{ fontStyle: 'italic', color: '#666' }}>No hay mensajes en esta sala todavía. ¡Sé el primero en escribir!</p>
-        )}
+      {/* NUEVO: Ocultamos toda esta bandeja si NO es moderador/admin */}
+      {canModerate && pendingMessages.length > 0 && (
+        <div style={{ backgroundColor: '#fff3cd', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ffe69c' }}>
+          <h3 style={{ color: '#856404', marginTop: 0 }}>🛡️ Bandeja de Moderación</h3>
+          {pendingMessages.map(msg => (
+             <div key={msg.id} style={{ backgroundColor: 'white', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
+               <strong>@{msg.authorUsername}</strong>: {msg.content}
+               <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                 <button onClick={() => handleModerate(msg.id, 'APPROVED')} style={{ backgroundColor: '#28a745', color: 'white', cursor: 'pointer', padding: '5px 10px', border: 'none', borderRadius: '3px' }}>Aprobar ✅</button>
+                 <button onClick={() => handleModerate(msg.id, 'REJECTED')} style={{ backgroundColor: '#dc3545', color: 'white', cursor: 'pointer', padding: '5px 10px', border: 'none', borderRadius: '3px' }}>Rechazar ❌</button>
+               </div>
+             </div>
+          ))}
+        </div>
+      )}
 
-        {!loading && messages.map(msg => (
-          <div key={msg.id} style={{ 
-            backgroundColor: 'white', 
-            padding: '10px 15px', 
-            borderRadius: '8px', 
-            marginBottom: '10px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-              <strong style={{ color: '#0056b3' }}>@{msg.authorUsername}</strong>
-              <span style={{ fontSize: '0.8em', color: '#888' }}>
-                {new Date(msg.creationDate).toLocaleString()}
-              </span>
-            </div>
+      <div style={{ border: '1px solid #ccc', padding: '20px', minHeight: '300px', backgroundColor: '#f9f9f9', marginBottom: '20px' }}>
+        {messages.map(msg => (
+          <div key={msg.id} style={{ backgroundColor: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px' }}>
+            <strong style={{ color: '#0056b3' }}>@{msg.authorUsername}</strong>
             <p style={{ margin: 0 }}>{msg.content}</p>
           </div>
         ))}
       </div>
 
-      {/* Formulario para Enviar Nuevo Mensaje */}
       <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
-        <input 
-          type="text" 
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Escribe tu mensaje aquí..." 
-          style={{ flexGrow: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-          disabled={sending}
-        />
-        <button type="submit" disabled={sending || !newMessage.trim()} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-          {sending ? 'Enviando...' : 'Enviar'}
-        </button>
+        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Escribe..." style={{ flexGrow: 1, padding: '10px' }} />
+        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>Enviar</button>
       </form>
-
     </div>
   );
 }

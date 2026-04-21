@@ -19,7 +19,12 @@ public class ListMessagesController {
 
     @GetMapping("/room/{roomId}")
     public ResponseEntity<List<Message>> getMessagesByRoom(@PathVariable Long roomId) {
-        List<Message> messages = listMessagesUseCase.execute(roomId);
-        return ResponseEntity.ok(messages);
+        return ResponseEntity.ok(listMessagesUseCase.execute(roomId));
+    }
+
+    // NUEVO ENDPOINT:
+    @GetMapping("/room/{roomId}/pending")
+    public ResponseEntity<List<Message>> getPendingMessages(@PathVariable Long roomId) {
+        return ResponseEntity.ok(listMessagesUseCase.executePending(roomId));
     }
 }

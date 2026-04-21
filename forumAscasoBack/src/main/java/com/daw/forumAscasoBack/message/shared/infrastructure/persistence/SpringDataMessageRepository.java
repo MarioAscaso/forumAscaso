@@ -7,7 +7,6 @@ import java.util.List;
 @Repository
 public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEntity, Long> {
 
-    // Spring Data crea automáticamente la consulta SQL por el nombre del método:
-    // "Encuentra por RoomId y ordénalos por CreationDate de forma ascendente"
-    List<MessageJpaEntity> findByRoom_IdOrderByCreationDateAsc(Long roomId);
+    // NUEVO MÉTODO: Busca por Sala Y por Estado (para filtrar los PENDING o REJECTED)
+    List<MessageJpaEntity> findByRoom_IdAndStatusOrderByCreationDateAsc(Long roomId, String status);
 }

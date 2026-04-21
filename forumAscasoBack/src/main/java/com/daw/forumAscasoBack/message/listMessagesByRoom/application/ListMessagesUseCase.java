@@ -14,4 +14,9 @@ public class ListMessagesUseCase {
     public List<Message> execute(Long roomId) {
         return repositoryPort.findByRoomId(roomId);
     }
+
+    // NUEVO MÉTODO:
+    public List<Message> executePending(Long roomId) {
+        return repositoryPort.findPendingByRoomId(roomId);
+    }
 }

@@ -28,16 +28,14 @@ public class JpaCreateMessageRepositoryAdapter implements CreateMessageRepositor
 
     @Override
     public void saveMessage(Long roomId, String authorEmail, String content) {
-        // 1. Buscamos al autor por su email (el token JWT nos da el email)
         UserJpaEntity author = userRepository.findByEmail(authorEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 2. Buscamos la sala
         RoomJpaEntity room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
-        // 3. Creamos la entidad y la guardamos
-        MessageJpaEntity newMessage = new MessageJpaEntity(content, LocalDateTime.now(), room, author);
+        // AÑADIMOS "APPROVED" AL CONSTRUCTOR TEMPORALMENTE
+        MessageJpaEntity newMessage = new MessageJpaEntity(content, LocalDateTime.now(), "APPROVED", room, author);
         messageRepository.save(newMessage);
     }
 }

@@ -19,65 +19,40 @@ public class MessageJpaEntity {
     @Column(nullable = false)
     private LocalDateTime creationDate;
 
-    // Relación: Muchos mensajes pertenecen a UNA sala
+    @Column(nullable = false, length = 20)
+    private String status; // NUEVA COLUMNA (Ej: "PENDING", "APPROVED", "REJECTED")
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
     private RoomJpaEntity room;
 
-    // Relación: Muchos mensajes son escritos por UN usuario (autor)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private UserJpaEntity author;
 
-    // Constructores
-    public MessageJpaEntity() {
-    }
+    public MessageJpaEntity() {}
 
-    public MessageJpaEntity(String content, LocalDateTime creationDate, RoomJpaEntity room, UserJpaEntity author) {
+    // Constructor actualizado
+    public MessageJpaEntity(String content, LocalDateTime creationDate, String status, RoomJpaEntity room, UserJpaEntity author) {
         this.content = content;
         this.creationDate = creationDate;
+        this.status = status;
         this.room = room;
         this.author = author;
     }
 
-    // Getters y Setters
-    public Long getId() {
-        return id;
-    }
+    // Getters y Setters (Añadimos los de status, dejo el resto igual)
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public LocalDateTime getCreationDate() { return creationDate; }
+    public void setCreationDate(LocalDateTime creationDate) { this.creationDate = creationDate; }
+    public RoomJpaEntity getRoom() { return room; }
+    public void setRoom(RoomJpaEntity room) { this.room = room; }
+    public UserJpaEntity getAuthor() { return author; }
+    public void setAuthor(UserJpaEntity author) { this.author = author; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getCreationDate() {
-        return creationDate;
-    }
-
-    public void setCreationDate(LocalDateTime creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public RoomJpaEntity getRoom() {
-        return room;
-    }
-
-    public void setRoom(RoomJpaEntity room) {
-        this.room = room;
-    }
-
-    public UserJpaEntity getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(UserJpaEntity author) {
-        this.author = author;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

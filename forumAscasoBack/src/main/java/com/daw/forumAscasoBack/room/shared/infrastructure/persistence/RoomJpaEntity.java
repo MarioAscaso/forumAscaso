@@ -20,4 +20,20 @@ public class RoomJpaEntity {
 
     @Column(name = "is_under_moderation", nullable = false)
     private boolean isUnderModeration;
+
+    @Column(nullable = false)
+    private boolean isModerated; // NUEVA COLUMNA
+
+    public RoomJpaEntity() {}
+
+    // Actualiza tu constructor
+    public RoomJpaEntity(String name, String description, boolean isModerated) {
+        this.name = name;
+        this.description = description;
+        this.isModerated = isModerated;
+    }
+
+    // Añade los Getters y Setters
+    public boolean isModerated() { return isModerated; }
+    public void setModerated(boolean isModerated) { this.isModerated = isModerated; }
 }

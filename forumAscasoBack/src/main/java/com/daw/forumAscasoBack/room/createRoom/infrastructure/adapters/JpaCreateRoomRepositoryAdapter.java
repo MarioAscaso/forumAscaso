@@ -9,24 +9,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class JpaCreateRoomRepositoryAdapter implements CreateRoomRepositoryPort {
 
-    private final SpringDataRoomRepository jpaRepository;
+    private final SpringDataRoomRepository roomRepository;
 
-    public JpaCreateRoomRepositoryAdapter(SpringDataRoomRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-    }
-
-    @Override
-    public boolean existsByName(String name) {
-        return jpaRepository.existsByName(name);
+    public JpaCreateRoomRepositoryAdapter(SpringDataRoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
     }
 
     @Override
     public void save(Room room) {
-        RoomJpaEntity entity = new RoomJpaEntity();
-        entity.setName(room.getName());
-        entity.setDescription(room.getDescription());
-        entity.setUnderModeration(room.isUnderModeration());
-
-        jpaRepository.save(entity);
+        // Usamos el constructor actualizado que creamos en el paso anterior
+        RoomJpaEntity entity = new RoomJpaEntity(room.getName(), room.getDescription(), room.isModerated());
+        roomRepository.save(entity);
     }
 }
