@@ -7,53 +7,31 @@ import RoomDetail from './components/RoomDetail';
 
 function AppRoutes() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsLoggedIn(false);
-    navigate('/login'); // Al salir, lo mandamos al login
+  
+  // Función para obtener el rol del token guardado
+  const getUserRole = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const payload = JSON.parse(window.atob(token.split('.')[1]));
+    return payload.role; // Aquí leemos el rol que añadimos en Java
   };
+
+  const role = getUserRole();
 
   return (
     <Routes>
-      {/* RUTAS PROTEGIDAS (Solo si estás logueado) */}
+      {/* RUTA PÚBLICA */}
+      <Route path="/login" element={<Login onLoginSuccess={() => setIsLoggedIn(true)} />} />
+
+      {/* RUTA PROTEGIDA: Panel Admin (Solo SUPERADMIN) */}
       <Route 
-        path="/" 
-        element={isLoggedIn ? <RoomList onLogout={handleLogout} /> : <Navigate to="/login" />} 
-      />
-      <Route 
-        path="/room/:id" 
-        element={isLoggedIn ? <RoomDetail /> : <Navigate to="/login" />} 
+        path="/admin" 
+        element={isLoggedIn && role === 'SUPERADMIN' ? <AdminPanel /> : <Navigate to="/" />} 
       />
 
-      {/* RUTAS PÚBLICAS (Login y Registro) */}
-      <Route 
-        path="/login" 
-        element={
-          !isLoggedIn ? (
-            <Login 
-              onLoginSuccess={() => { setIsLoggedIn(true); navigate('/'); }} 
-              onGoToRegister={() => navigate('/register')} 
-            />
-          ) : (
-            <Navigate to="/" />
-          )
-        } 
-      />
-      <Route 
-        path="/register" 
-        element={
-          !isLoggedIn ? (
-            <Register 
-              onRegisterSuccess={() => navigate('/login')} 
-              onGoToLogin={() => navigate('/login')} 
-            />
-          ) : (
-            <Navigate to="/" />
-          )
-        } 
-      />
+      {/* RUTAS NORMALES */}
+      <Route path="/" element={isLoggedIn ? <RoomList /> : <Navigate to="/login" />} />
+      <Route path="/room/:id" element={isLoggedIn ? <RoomDetail /> : <Navigate to="/login" />} />
     </Routes>
   );
 }

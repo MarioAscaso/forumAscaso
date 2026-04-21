@@ -1,5 +1,7 @@
 package com.daw.forumAscasoBack.room.shared.infrastructure.persistence;
 
+import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -36,4 +38,12 @@ public class RoomJpaEntity {
     // Añade los Getters y Setters
     public boolean isModerated() { return isModerated; }
     public void setModerated(boolean isModerated) { this.isModerated = isModerated; }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "moderator_id") // Una sala puede tener un moderador (o null)
+    private UserJpaEntity moderator;
+
+    // Getter y Setter
+    public UserJpaEntity getModerator() { return moderator; }
+    public void setModerator(UserJpaEntity moderator) { this.moderator = moderator; }
 }
