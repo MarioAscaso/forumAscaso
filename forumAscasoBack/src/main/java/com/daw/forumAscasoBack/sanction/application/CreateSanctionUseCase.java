@@ -1,7 +1,9 @@
 package com.daw.forumAscasoBack.sanction.application;
 
-import com.daw.forumAscasoBack.sanction.shared.infrastructure.persistence.SpringDataSanctionRepository;
-import com.daw.forumAscasoBack.sanction.shared.infrastructure.persistence.SanctionJpaEntity;
+// CORRECCIÓN: Quitamos el ".shared" de estos dos imports
+import com.daw.forumAscasoBack.sanction.infrastructure.persistence.SpringDataSanctionRepository;
+import com.daw.forumAscasoBack.sanction.infrastructure.persistence.SanctionJpaEntity;
+
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.SpringDataUserRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
 import org.springframework.stereotype.Service;
@@ -26,7 +28,6 @@ public class CreateSanctionUseCase {
 
         LocalDateTime expiry = (days != null) ? LocalDateTime.now().plusDays(days) : null;
 
-        // CORRECCIÓN AQUÍ: Cambiamos 'var' por 'UserJpaEntity'
         UserJpaEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 

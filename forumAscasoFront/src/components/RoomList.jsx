@@ -1,39 +1,45 @@
-import { useEffect, useState } from 'react';
-import { fetchRooms } from '../api/roomApi';
-import { Link } from 'react-router-dom'; // <--- 1. Importa Link aquí
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
-function RoomList({ onLogout }) {
+const RoomList = () => {
   const [rooms, setRooms] = useState([]);
 
   useEffect(() => {
-    fetchRooms()
-      .then(res => setRooms(res.data))
-      .catch(err => console.error("Error al cargar salas:", err));
+    const fetchRooms = async () => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+        const res = await axios.get("http://localhost:8686/api/rooms", config);
+        setRooms(res.data);
+      } catch (err) {
+        console.error("Error al cargar salas", err);
+      }
+    };
+    fetchRooms();
   }, []);
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Foro Ascaso - Salas</h1>
-        <button onClick={onLogout}>Cerrar sesión</button>
+    <div>
+      <h2 className="mb-4">Salas de Discusión</h2>
+      <div className="row">
+        {rooms.map(room => (
+          <div className="col-md-4 mb-4" key={room.id}>
+            <div className="card h-100 shadow-sm hover-shadow transition">
+              <div className="card-body">
+                <h5 className="card-title d-flex justify-content-between align-items-center">
+                  {room.name}
+                  {room.isModerated && <span className="badge bg-warning text-dark" style={{fontSize: '0.6em'}}>Moderada</span>}
+                </h5>
+                <p className="card-text text-muted">{room.description || "Sin descripción"}</p>
+              </div>
+              <div className="card-footer bg-white border-top-0 pb-3">
+                <Link to={`/room/${room.id}`} className="btn btn-outline-primary w-100">Entrar a la sala</Link>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-      
-      {rooms.length === 0 ? <p>No hay salas disponibles.</p> : null}
-      
-      {rooms.map(room => (
-        <div key={room.id} style={{ border: '1px solid #ccc', margin: '10px 0', padding: '15px', borderRadius: '5px' }}>
-          <h3>{room.name}</h3>
-          <p>{room.description}</p>
-          
-          {/* 2. Añade este Link para viajar a la sala */}
-          <Link to={`/room/${room.id}`}>
-            <button style={{ marginTop: '10px', cursor: 'pointer' }}>Entrar a la sala</button>
-          </Link>
-          
-        </div>
-      ))}
     </div>
   );
-}
-
-export default RoomList; // (Asegúrate de que exporta RoomList)
+};
+export default RoomList;

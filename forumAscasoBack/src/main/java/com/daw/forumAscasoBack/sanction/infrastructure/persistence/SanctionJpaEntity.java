@@ -38,5 +38,26 @@ public class SanctionJpaEntity {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters y Setters...
+    // --- AQUÍ ESTÁN LOS GETTERS Y SETTERS QUE FALTABAN ---
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public UserJpaEntity getUser() { return user; }
+    public void setUser(UserJpaEntity user) { this.user = user; }
+
+    public RoomJpaEntity getRoom() { return room; }
+    public void setRoom(RoomJpaEntity room) { this.room = room; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+
+    public LocalDateTime getExpiryDate() { return expiryDate; }
+    public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

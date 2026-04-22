@@ -6,8 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api/users")
+// OJO: Cambiamos a /api/auth porque así lo configuramos en el Front (Login.jsx)
+@RequestMapping("/api/auth")
 public class LoginController {
 
     private final LoginUseCase useCase;
@@ -17,12 +20,13 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginCommand command) {
+    public ResponseEntity<?> login(@RequestBody LoginCommand command) {
         try {
-            String token = useCase.execute(command);
-            return ResponseEntity.ok(token); // Devuelve el Token 200 OK
+            // Ahora recibimos y devolvemos un Map (que Spring convierte en JSON automáticamente)
+            Map<String, String> response = useCase.execute(command);
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage()); // 401 Credenciales inválidas
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 }

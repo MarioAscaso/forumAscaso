@@ -30,9 +30,14 @@ public class JpaRegisterUserRepositoryAdapter implements RegisterUserRepositoryP
         UserJpaEntity entity = new UserJpaEntity();
         entity.setUsername(user.getUsername());
         entity.setEmail(user.getEmail());
-        entity.setPasswordHash(user.getPasswordHash());
-        entity.setRole(UserJpaEntity.Role.valueOf(user.getRole().name()));
-        entity.setStatus(UserJpaEntity.Status.valueOf(user.getStatus().name()));
+
+        // CORRECCIÓN 1: Usamos setPassword en lugar de setPasswordHash
+        entity.setPassword(user.getPasswordHash());
+
+        // CORRECCIÓN 2: Guardamos el rol como String
+        entity.setRole(user.getRole() != null ? user.getRole().toString() : "PARTICIPANT");
+
+        // (Se ha eliminado el 'setStatus' ya que no lo necesitamos en la BD actual)
 
         jpaRepository.save(entity);
     }

@@ -1,110 +1,126 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { fetchMessagesByRoom, createMessage, fetchPendingMessages, updateMessageStatus } from '../api/roomApi';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
-// NUEVO: Función para descifrar el JWT y sacar el rol
-const getUserRole = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-  try {
-    // Decodificamos la parte central del JWT (el payload)
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(window.atob(base64));
-    
-    console.log("Datos del token:", payload); // <-- Útil para ver qué datos te manda Java
-    
-    // Spring Security suele guardar el rol en "role", "roles" o "authorities"
-    // Lo pasamos todo a texto para buscar fácilmente
-    const rolesString = JSON.stringify(payload); 
-    
-    if (rolesString.includes('SUPERADMIN') || rolesString.includes('MODERATOR')) {
-      return 'ADMIN_OR_MOD';
-    }
-    return 'PARTICIPANT';
-  } catch (error) {
-    console.error("Error al leer el token", error);
-    return 'PARTICIPANT';
-  }
-};
-
-function RoomDetail() {
+const RoomDetail = ({ user }) => {
   const { id } = useParams();
   const [messages, setMessages] = useState([]);
-  const [pendingMessages, setPendingMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [pending, setPending] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
   
-  // NUEVO: Guardamos el rol del usuario actual
-  const userRole = getUserRole();
-  const canModerate = userRole === 'ADMIN_OR_MOD';
+  const config = { headers: { Authorization: `Bearer ${user.token}` } };
+  const isModOrAdmin = user.role === 'MODERATOR' || user.role === 'SUPERADMIN';
 
-  const loadMessages = () => {
-    fetchMessagesByRoom(id).then(res => setMessages(res.data)).catch(console.error);
-    
-    // NUEVO: Solo pedimos los mensajes pendientes si el usuario tiene permisos
-    if (canModerate) {
-      fetchPendingMessages(id).then(res => setPendingMessages(res.data)).catch(console.error);
-    }
+  const loadMessages = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8686/api/messages/room/${id}`, config);
+      setMessages(res.data.filter(m => m.status === 'APPROVED'));
+      setPending(res.data.filter(m => m.status === 'PENDING'));
+    } catch (err) { console.error("Error cargando mensajes", err); }
   };
 
   useEffect(() => { loadMessages(); }, [id]);
 
-  const handleSendMessage = async (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     try {
-      await createMessage(id, newMessage);
-      setNewMessage('');
-      loadMessages(); 
-      alert("Mensaje enviado. Si la sala es moderada, espera a su aprobación.");
-    } catch (err) { console.error(err); }
+      await axios.post(`http://localhost:8686/api/messages/room/${id}`, { content: newMessage }, config);
+      setNewMessage("");
+      loadMessages();
+    } catch (err) { alert(err.response?.data || "No puedes enviar mensajes."); }
   };
 
-  const handleModerate = async (messageId, status) => {
+  // Acciones de Moderador
+  const moderateMessage = async (msgId, status) => {
     try {
-      await updateMessageStatus(messageId, status);
-      loadMessages(); 
-    } catch (err) {
-      console.error("Error al moderar:", err);
-    }
+      await axios.patch(`http://localhost:8686/api/messages/${msgId}/status?status=${status}`, {}, config);
+      loadMessages();
+    } catch (err) { alert("Error al moderar"); }
+  };
+
+  const applySanction = async (userId, type) => {
+    const reason = prompt("Indica el motivo de la sanción:");
+    if (!reason) return;
+    try {
+      await axios.post(`http://localhost:8686/api/sanctions`, { userId, type, reason, days: type === 'TEMPORARY_BAN' ? 7 : null }, config);
+      alert("Sanción aplicada con éxito");
+    } catch (err) { alert("Error al sancionar"); }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: 'auto', padding: '20px' }}>
-      <Link to="/"><button style={{ marginBottom: '20px' }}>← Volver</button></Link>
-      <h2>Sala de Chat</h2>
-
-      {/* NUEVO: Ocultamos toda esta bandeja si NO es moderador/admin */}
-      {canModerate && pendingMessages.length > 0 && (
-        <div style={{ backgroundColor: '#fff3cd', padding: '15px', borderRadius: '5px', marginBottom: '20px', border: '1px solid #ffe69c' }}>
-          <h3 style={{ color: '#856404', marginTop: 0 }}>🛡️ Bandeja de Moderación</h3>
-          {pendingMessages.map(msg => (
-             <div key={msg.id} style={{ backgroundColor: 'white', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
-               <strong>@{msg.authorUsername}</strong>: {msg.content}
-               <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                 <button onClick={() => handleModerate(msg.id, 'APPROVED')} style={{ backgroundColor: '#28a745', color: 'white', cursor: 'pointer', padding: '5px 10px', border: 'none', borderRadius: '3px' }}>Aprobar ✅</button>
-                 <button onClick={() => handleModerate(msg.id, 'REJECTED')} style={{ backgroundColor: '#dc3545', color: 'white', cursor: 'pointer', padding: '5px 10px', border: 'none', borderRadius: '3px' }}>Rechazar ❌</button>
-               </div>
-             </div>
-          ))}
+    <div className="row">
+      {/* VISTA DE MODERACIÓN (A la izquierda, solo visible para Admin/Mod) */}
+      {isModOrAdmin && (
+        <div className="col-md-4 mb-4">
+          <div className="card border-warning shadow-sm">
+            <div className="card-header bg-warning text-dark fw-bold">
+              📥 Bandeja de Revisión ({pending.length})
+            </div>
+            <div className="card-body" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              {pending.length === 0 ? <p className="text-muted small">No hay mensajes pendientes.</p> : 
+                pending.map(m => (
+                  <div key={m.id} className="border-bottom pb-3 mb-3">
+                    <div className="d-flex justify-content-between mb-1">
+                      <strong>{m.authorUsername}</strong>
+                      <small className="text-muted">{new Date(m.createdAt).toLocaleTimeString()}</small>
+                    </div>
+                    <p className="small mb-2">{m.content}</p>
+                    <div className="d-flex gap-1 mb-2">
+                      <button className="btn btn-success btn-sm w-50" onClick={() => moderateMessage(m.id, 'APPROVED')}>Aprobar</button>
+                      <button className="btn btn-danger btn-sm w-50" onClick={() => moderateMessage(m.id, 'REJECTED')}>Rechazar</button>
+                    </div>
+                    {/* Botones de sanción rápida */}
+                    <div className="dropdown w-100">
+                      <button className="btn btn-outline-dark btn-sm dropdown-toggle w-100" data-bs-toggle="dropdown">
+                        ⚖️ Sancionar
+                      </button>
+                      <ul className="dropdown-menu w-100">
+                        <li><button className="dropdown-item" onClick={() => applySanction(m.authorId, 'WARNING')}>⚠️ Enviar Aviso</button></li>
+                        <li><button className="dropdown-item text-warning" onClick={() => applySanction(m.authorId, 'TEMPORARY_BAN')}>⛔ Banear 7 días</button></li>
+                        <li><button className="dropdown-item text-danger fw-bold" onClick={() => applySanction(m.authorId, 'PERMANENT_BAN')}>💀 Baneo Permanente</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
         </div>
       )}
 
-      <div style={{ border: '1px solid #ccc', padding: '20px', minHeight: '300px', backgroundColor: '#f9f9f9', marginBottom: '20px' }}>
-        {messages.map(msg => (
-          <div key={msg.id} style={{ backgroundColor: 'white', padding: '10px', borderRadius: '8px', marginBottom: '10px' }}>
-            <strong style={{ color: '#0056b3' }}>@{msg.authorUsername}</strong>
-            <p style={{ margin: 0 }}>{msg.content}</p>
+      {/* MURO PÚBLICO (A la derecha, visible para todos) */}
+      <div className={isModOrAdmin ? "col-md-8" : "col-md-12"}>
+        <div className="card shadow-sm">
+          <div className="card-header bg-white">
+            <h4 className="mb-0">Muro de la Sala</h4>
           </div>
-        ))}
+          <div className="card-body" style={{ height: '500px', overflowY: 'auto', backgroundColor: '#f8f9fa' }}>
+            {messages.length === 0 ? <p className="text-center text-muted mt-5">No hay mensajes. ¡Sé el primero!</p> :
+              messages.map(m => (
+                <div key={m.id} className="d-flex mb-3">
+                  <div className={`p-3 rounded shadow-sm ${m.authorUsername === user.username ? 'bg-primary text-white ms-auto' : 'bg-white border'}`} style={{ maxWidth: '75%' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-1 gap-3">
+                      <small className={m.authorUsername === user.username ? 'text-light' : 'text-primary fw-bold'}>
+                        {m.authorUsername}
+                      </small>
+                      <small style={{ fontSize: '0.7em', opacity: 0.7 }}>{new Date(m.createdAt).toLocaleTimeString()}</small>
+                    </div>
+                    <p className="mb-0">{m.content}</p>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+          <div className="card-footer bg-white">
+            <form onSubmit={handleSend} className="d-flex gap-2">
+              <input type="text" className="form-control" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Escribe tu mensaje aquí..." />
+              <button type="submit" className="btn btn-primary px-4">Enviar</button>
+            </form>
+          </div>
+        </div>
       </div>
-
-      <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
-        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Escribe..." style={{ flexGrow: 1, padding: '10px' }} />
-        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>Enviar</button>
-      </form>
     </div>
   );
-}
-
+};
 export default RoomDetail;
