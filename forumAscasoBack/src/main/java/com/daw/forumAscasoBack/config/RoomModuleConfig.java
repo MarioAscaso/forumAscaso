@@ -4,6 +4,8 @@ import com.daw.forumAscasoBack.room.createRoom.application.CreateRoomUseCase;
 import com.daw.forumAscasoBack.room.createRoom.domain.CreateRoomRepositoryPort;
 import com.daw.forumAscasoBack.room.deleteRoom.application.DeleteRoomUseCase;
 import com.daw.forumAscasoBack.room.deleteRoom.domain.DeleteRoomRepositoryPort;
+import com.daw.forumAscasoBack.room.assignModerator.application.AssignModeratorUseCase;
+import com.daw.forumAscasoBack.room.assignModerator.domain.AssignModeratorRepositoryPort;
 import com.daw.forumAscasoBack.room.listRooms.application.ListRoomsUseCase;
 import com.daw.forumAscasoBack.room.listRooms.domain.ListRoomsRepositoryPort;
 import com.daw.forumAscasoBack.room.updateRoom.application.UpdateRoomUseCase;
@@ -34,5 +36,10 @@ public class RoomModuleConfig {
     @Bean
     public DeleteRoomUseCase deleteRoomUseCase(DeleteRoomRepositoryPort repository) {
         return new DeleteRoomUseCase(repository);
+    }
+
+    @Bean
+    public AssignModeratorUseCase assignModeratorUseCase(AssignModeratorRepositoryPort port) {
+        return new AssignModeratorUseCase(port);
     }
 }

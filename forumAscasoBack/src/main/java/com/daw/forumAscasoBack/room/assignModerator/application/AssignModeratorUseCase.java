@@ -1,30 +1,19 @@
 package com.daw.forumAscasoBack.room.assignModerator.application;
 
-import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.RoomJpaEntity;
-import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.SpringDataRoomRepository;
-import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.SpringDataUserRepository;
-import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
-import org.springframework.stereotype.Service;
+import com.daw.forumAscasoBack.room.assignModerator.domain.AssignModeratorRepositoryPort;
 
-@Service
 public class AssignModeratorUseCase {
-    private final SpringDataRoomRepository roomRepository;
-    private final SpringDataUserRepository userRepository;
+    private final AssignModeratorRepositoryPort repository;
 
-    public AssignModeratorUseCase(SpringDataRoomRepository roomRepository, SpringDataUserRepository userRepository) {
-        this.roomRepository = roomRepository;
-        this.userRepository = userRepository;
+    public AssignModeratorUseCase(AssignModeratorRepositoryPort repository) {
+        this.repository = repository;
     }
 
     public void execute(Long roomId, Long moderatorId) {
-        RoomJpaEntity room = roomRepository.findById(roomId).orElseThrow();
-        UserJpaEntity moderator = userRepository.findById(moderatorId).orElseThrow();
-
         // REQUISITO: Máximo 2 salas por moderador
-        long count = roomRepository.countByModeratorId(moderatorId);
+        long count = repository.countRoomsByModeratorId(moderatorId);
         if (count >= 2) throw new RuntimeException("Este moderador ya tiene 2 salas asignadas.");
 
-        room.setModerator(moderator);
-        roomRepository.save(room);
+        repository.assignModeratorToRoom(roomId, moderatorId);
     }
 }

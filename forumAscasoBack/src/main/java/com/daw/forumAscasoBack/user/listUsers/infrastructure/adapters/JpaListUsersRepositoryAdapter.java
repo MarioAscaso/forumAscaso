@@ -5,7 +5,6 @@ import com.daw.forumAscasoBack.user.shared.domain.model.User;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.SpringDataUserRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,21 +19,21 @@ public class JpaListUsersRepositoryAdapter implements ListUsersRepositoryPort {
 
     @Override
     public List<User> findAll() {
-        return jpaRepository.findAll().stream().map(entity -> {
+        List<UserJpaEntity> entities = jpaRepository.findAll();
+
+        return entities.stream().map(entity -> {
             User user = new User();
             user.setId(entity.getId());
             user.setEmail(entity.getEmail());
             user.setUsername(entity.getUsername());
 
-            // Si tu User tiene un setRole que acepta String, esto funcionará.
-            // Si setRole acepta un ENUM, usaremos String.valueOf().
-            try {
-                // Probamos a pasarle el rol como String.
-                // Si falla porque espera un Enum, Java nos avisará en tiempo de ejecución.
-                user.setRole(entity.getRole());
-            } catch (Exception e) {
-                // Opción B: Si falla, forzamos la conversión a String plano
-                user.setRole(entity.getRole().toString());
+            // CORRECCIÓN: Convertir el String de la BD al Enum User.Role
+            if (entity.getRole() != null) {
+                try {
+                    user.setRole(User.Role.valueOf(entity.getRole()));
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Rol no reconocido en BD: " + entity.getRole());
+                }
             }
 
             return user;

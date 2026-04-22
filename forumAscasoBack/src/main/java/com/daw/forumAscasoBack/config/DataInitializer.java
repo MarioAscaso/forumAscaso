@@ -13,37 +13,37 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initDatabase(SpringDataUserRepository repository, PasswordEncoder passwordEncoder) {
         return args -> {
-            // Comprobamos si existe el Superadmin antes de crearlo
-            if (!repository.existsByEmail("admin@test.com")) {
+            // COMPROBACIÓN GLOBAL: Solo insertamos si la tabla de usuarios está completamente vacía
+            if (repository.count() == 0) {
+
+                // 1. Crear el Superadmin
                 repository.save(new UserJpaEntity(
                         "admin@test.com",
                         "admin",
                         passwordEncoder.encode("admin123"),
                         "SUPERADMIN"
                 ));
-            }
 
-            // Comprobamos si existe el Moderador
-            if (!repository.existsByEmail("mod@test.com")) {
+                // 2. Crear el Moderador
                 repository.save(new UserJpaEntity(
                         "mod@test.com",
                         "moderador",
                         passwordEncoder.encode("mod123"),
                         "MODERATOR"
                 ));
-            }
 
-            // Comprobamos si existe el Participante normal
-            if (!repository.existsByEmail("user@test.com")) {
+                // 3. Crear el Participante normal
                 repository.save(new UserJpaEntity(
                         "user@test.com",
                         "juan_participante",
                         passwordEncoder.encode("user123"),
                         "PARTICIPANT"
                 ));
-            }
 
-            System.out.println("✅ Usuarios de prueba verificados y listos en la BD.");
+                System.out.println("✅ Base de datos vacía detectada: Usuarios de prueba generados e insertados con éxito.");
+            } else {
+                System.out.println("✅ La base de datos ya contiene usuarios. Omitiendo la inicialización automática.");
+            }
         };
     }
 }
