@@ -3,26 +3,30 @@ package com.daw.forumAscasoBack.message.shared.domain.model;
 import java.time.LocalDateTime;
 
 public class Message {
-    private final Long id;
-    private final String content;
-    private final LocalDateTime creationDate;
-    private final Long roomId;
-    private final String authorUsername;
-    private final String status; // NUEVO CAMPO
+    private Long id;
+    private String content;
+    private LocalDateTime createdAt;
+    private String status;
+    private Long authorId; // <-- VITAL para los baneos
+    private String authorUsername;
 
-    public Message(Long id, String content, LocalDateTime creationDate, Long roomId, String authorUsername, String status) {
-        this.id = id;
-        this.content = content;
-        this.creationDate = creationDate;
-        this.roomId = roomId;
-        this.authorUsername = authorUsername;
-        this.status = status;
-    }
+    // --- GETTERS Y SETTERS ---
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public String getContent() { return content; }
-    public LocalDateTime getCreationDate() { return creationDate; }
-    public Long getRoomId() { return roomId; }
+    public void setContent(String content) { this.content = content; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public Long getAuthorId() { return authorId; }
+    public void setAuthorId(Long authorId) { this.authorId = authorId; }
+
     public String getAuthorUsername() { return authorUsername; }
-    public String getStatus() { return status; } // NUEVO GETTER
+    public void setAuthorUsername(String authorUsername) { this.authorUsername = authorUsername; }
 }

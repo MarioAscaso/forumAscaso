@@ -3,6 +3,8 @@ package com.daw.forumAscasoBack.config;
 import com.daw.forumAscasoBack.user.registerParticipant.application.RegisterParticipantUseCase;
 import com.daw.forumAscasoBack.user.registerParticipant.domain.PasswordEncoderPort;
 import com.daw.forumAscasoBack.user.registerParticipant.domain.RegisterUserRepositoryPort;
+import com.daw.forumAscasoBack.user.listUsers.application.ListUsersUseCase;
+import com.daw.forumAscasoBack.user.listUsers.domain.ListUsersRepositoryPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,5 +26,10 @@ public class UserModuleConfig {
             com.daw.forumAscasoBack.user.login.domain.JwtTokenPort jwtTokenPort) {
 
         return new com.daw.forumAscasoBack.user.login.application.LoginUseCase(userRepository, passwordEncoder, jwtTokenPort);
+    }
+
+    @Bean
+    public ListUsersUseCase listUsersUseCase(ListUsersRepositoryPort repository) {
+        return new ListUsersUseCase(repository);
     }
 }

@@ -2,6 +2,7 @@ package com.daw.forumAscasoBack.message.listMessagesByRoom.infrastructure.adapte
 
 import com.daw.forumAscasoBack.message.listMessagesByRoom.domain.ListMessagesRepositoryPort;
 import com.daw.forumAscasoBack.message.shared.domain.model.Message;
+import com.daw.forumAscasoBack.message.shared.infrastructure.persistence.MessageJpaEntity;
 import com.daw.forumAscasoBack.message.shared.infrastructure.persistence.SpringDataMessageRepository;
 import org.springframework.stereotype.Component;
 
@@ -11,32 +12,38 @@ import java.util.stream.Collectors;
 @Component
 public class JpaListMessagesRepositoryAdapter implements ListMessagesRepositoryPort {
 
-    private final SpringDataMessageRepository springDataRepository;
+    private final SpringDataMessageRepository jpaRepository;
 
-    public JpaListMessagesRepositoryAdapter(SpringDataMessageRepository springDataRepository) {
-        this.springDataRepository = springDataRepository;
+    public JpaListMessagesRepositoryAdapter(SpringDataMessageRepository jpaRepository) {
+        this.jpaRepository = jpaRepository;
     }
 
     @Override
     public List<Message> findByRoomId(Long roomId) {
-        return springDataRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "APPROVED")
-                // ... (deja tu map igual que lo tenías)
-                .stream().map(entity -> new Message(entity.getId(), entity.getContent(), entity.getCreationDate(), entity.getRoom().getId(), entity.getAuthor().getUsername(), entity.getStatus())).collect(Collectors.toList());
+        // Usamos el nombre exacto de tu repositorio
+        List<MessageJpaEntity> entities = jpaRepository.findByRoom_IdOrderByCreationDateAsc(roomId);
+        return entities.stream().map(this::toDomain).collect(Collectors.toList());
     }
 
-    // AÑADE ESTE NUEVO MÉTODO:
     @Override
     public List<Message> findPendingByRoomId(Long roomId) {
-        return springDataRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "PENDING")
-                .stream()
-                .map(entity -> new Message(
-                        entity.getId(),
-                        entity.getContent(),
-                        entity.getCreationDate(),
-                        entity.getRoom().getId(),
-                        entity.getAuthor().getUsername(),
-                        entity.getStatus()
-                ))
-                .collect(Collectors.toList());
+        // Usamos el nombre exacto de tu repositorio
+        List<MessageJpaEntity> entities = jpaRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "PENDING");
+        return entities.stream().map(this::toDomain).collect(Collectors.toList());
+    }
+
+    private Message toDomain(MessageJpaEntity entity) {
+        Message message = new Message();
+        message.setId(entity.getId());
+        message.setContent(entity.getContent());
+
+        // AQUÍ ESTABA EL ERROR: Llamamos a tu método real (getCreationDate)
+        message.setCreatedAt(entity.getCreationDate());
+
+        message.setStatus(entity.getStatus());
+        message.setAuthorId(entity.getAuthor().getId());
+        message.setAuthorUsername(entity.getAuthor().getUsername());
+
+        return message;
     }
 }

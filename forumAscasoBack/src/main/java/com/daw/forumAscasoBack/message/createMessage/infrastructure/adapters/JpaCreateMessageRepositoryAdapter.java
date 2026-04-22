@@ -7,11 +7,8 @@ import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.RoomJpaEnt
 import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.SpringDataRoomRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.SpringDataUserRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
-
-// IMPORTAMOS NUESTRAS SANCIONES
 import com.daw.forumAscasoBack.sanction.infrastructure.persistence.SpringDataSanctionRepository;
 import com.daw.forumAscasoBack.sanction.infrastructure.persistence.SanctionJpaEntity;
-
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -23,9 +20,8 @@ public class JpaCreateMessageRepositoryAdapter implements CreateMessageRepositor
     private final SpringDataMessageRepository messageRepository;
     private final SpringDataUserRepository userRepository;
     private final SpringDataRoomRepository roomRepository;
-    private final SpringDataSanctionRepository sanctionRepository; // NUEVO REPOSITORIO
+    private final SpringDataSanctionRepository sanctionRepository;
 
-    // Lo añadimos al constructor
     public JpaCreateMessageRepositoryAdapter(SpringDataMessageRepository messageRepository,
                                              SpringDataUserRepository userRepository,
                                              SpringDataRoomRepository roomRepository,
@@ -41,27 +37,46 @@ public class JpaCreateMessageRepositoryAdapter implements CreateMessageRepositor
         UserJpaEntity author = userRepository.findByEmail(authorEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // --- MAGIA DE LA MODERACIÓN: COMPROBAR BANEOS ---
+        // 1. REQUISITO: Comprobación de Sanciones (Baneos)
         List<SanctionJpaEntity> sanctions = sanctionRepository.findByUser_Id(author.getId());
-
-        // Comprobamos si hay alguna sanción tipo BAN que sea PERMANENTE (fecha nula) o TEMPORAL (fecha en el futuro)
         boolean isBanned = sanctions.stream().anyMatch(s ->
                 s.getType().contains("BAN") &&
                 (s.getExpiryDate() == null || s.getExpiryDate().isAfter(LocalDateTime.now()))
         );
 
         if (isBanned) {
-            // Si está baneado, detenemos el proceso con un error
-            throw new RuntimeException("No puedes publicar mensajes. Tienes un bloqueo activo por mala conducta.");
+            // Este texto exacto será capturado por React para mostrar el Alert personalizado
+            throw new RuntimeException("Tu cuenta ha sido bloqueada debido a incumplimientos en las normas de la comunidad.");
         }
-        // ------------------------------------------------
+
+        // 2. REQUISITO: Límite Anti-Spam (Máximo 10 mensajes última semana)
+        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+        long messageCount = messageRepository.countByAuthor_IdAndCreationDateAfter(author.getId(), oneWeekAgo);
+
+        if (messageCount >= 10) {
+            throw new RuntimeException("Has alcanzado el límite de 10 mensajes semanales permitido por el centro.");
+        }
 
         RoomJpaEntity room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
-        String initialStatus = room.isModerated() ? "PENDING" : "APPROVED";
+        // 3. MEJORA: Los mods y admins NO pasan por moderación (Se auto-aprueban)
+        String initialStatus = "APPROVED";
+        boolean isStaff = "MODERATOR".equals(author.getRole()) || "SUPERADMIN".equals(author.getRole());
 
-        MessageJpaEntity newMessage = new MessageJpaEntity(content, LocalDateTime.now(), initialStatus, room, author);
+        if (room.isModerated() && !isStaff) {
+            initialStatus = "PENDING";
+        }
+
+        // 4. Guardado final en base de datos
+        MessageJpaEntity newMessage = new MessageJpaEntity(
+                content,
+                LocalDateTime.now(),
+                initialStatus,
+                room,
+                author
+        );
+
         messageRepository.save(newMessage);
     }
 }

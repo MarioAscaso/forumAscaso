@@ -1,10 +1,8 @@
-package com.daw.forumAscasoBack.message.moderateMessage.infrastructure.controllers;
+package com.daw.forumAscasoBack.message.moderateMessage.infrastrcuture.controllers;
 
 import com.daw.forumAscasoBack.message.moderateMessage.application.ModerateMessageUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -19,10 +17,10 @@ public class ModerateMessageController {
     @PatchMapping("/{messageId}/status")
     public ResponseEntity<Void> updateStatus(
             @PathVariable Long messageId,
-            @RequestBody Map<String, String> body) {
+            // CORRECCIÓN: Le decimos que busque el estado en la URL (?status=...)
+            @RequestParam("status") String status) {
 
-        String newStatus = body.get("status");
-        moderateMessageUseCase.execute(messageId, newStatus);
+        moderateMessageUseCase.execute(messageId, status);
 
         return ResponseEntity.ok().build();
     }

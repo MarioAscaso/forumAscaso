@@ -6,6 +6,7 @@ import RoomList from "./components/RoomList";
 import RoomDetail from "./components/RoomDetail";
 import AdminPanel from "./components/AdminPanel";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 function App() {
   const [user, setUser] = useState(null);
