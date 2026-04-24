@@ -30,14 +30,10 @@ public class JpaRegisterUserRepositoryAdapter implements RegisterUserRepositoryP
         UserJpaEntity entity = new UserJpaEntity();
         entity.setUsername(user.getUsername());
         entity.setEmail(user.getEmail());
+        entity.setPassword(user.getPassword());
 
-        // CORRECCIÓN 1: Usamos setPassword en lugar de setPasswordHash
-        entity.setPassword(user.getPasswordHash());
-
-        // CORRECCIÓN 2: Guardamos el rol como String
-        entity.setRole(user.getRole() != null ? user.getRole().toString() : "PARTICIPANT");
-
-        // (Se ha eliminado el 'setStatus' ya que no lo necesitamos en la BD actual)
+        // Extraemos el nombre del Enum para guardarlo en la Base de Datos como String
+        entity.setRole(user.getRole() != null ? user.getRole().name() : User.Role.PARTICIPANT.name());
 
         jpaRepository.save(entity);
     }

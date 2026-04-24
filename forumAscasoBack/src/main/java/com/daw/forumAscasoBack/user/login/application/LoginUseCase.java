@@ -25,32 +25,32 @@ public class LoginUseCase {
     }
 
     public Map<String, String> execute(LoginCommand command) {
-        // 1. Buscamos al usuario por email
         UserJpaEntity userEntity = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
 
-        // 2. CORRECCIÓN: Usamos getPassword() en lugar de getPasswordHash()
         if (!passwordEncoder.matches(command.password(), userEntity.getPassword())) {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
-        // 3. Convertimos la entidad JPA al modelo de Dominio
         User user = new User();
         user.setId(userEntity.getId());
         user.setEmail(userEntity.getEmail());
         user.setUsername(userEntity.getUsername());
 
-        // CORRECCIÓN: getRole() ahora es un String directo
-        user.setRole(User.Role.valueOf(userEntity.getRole()));
+        // CONVERTIMOS DE STRING (BD) A ENUM (DOMINIO)
+        try {
+            user.setRole(User.Role.valueOf(userEntity.getRole().trim().toUpperCase()));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            user.setRole(User.Role.PARTICIPANT); // Valor por defecto si hay error en BD
+        }
 
-        // 4. Generamos el Token
         String token = jwtTokenPort.generateToken(user);
 
-        // 5. Preparamos la respuesta que React necesita
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
-        response.put("role", userEntity.getRole());
-        response.put("username", userEntity.getUsername());
+        // Volvemos a pasarlo a String para enviarlo a React
+        response.put("role", user.getRole().name());
+        response.put("username", user.getUsername());
 
         return response;
     }

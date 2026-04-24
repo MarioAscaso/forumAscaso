@@ -18,9 +18,9 @@ public class DataInitializer {
 
                 // 1. Crear el Superadmin
                 repository.save(new UserJpaEntity(
-                        "admin@test.com",
-                        "admin",
-                        passwordEncoder.encode("admin123"),
+                        "superadmin@test.com",
+                        "superadmin",
+                        passwordEncoder.encode("superadmin123"),
                         "SUPERADMIN"
                 ));
 
@@ -28,15 +28,22 @@ public class DataInitializer {
                 repository.save(new UserJpaEntity(
                         "mod@test.com",
                         "moderador",
-                        passwordEncoder.encode("mod123"),
+                        passwordEncoder.encode("moderador123"),
                         "MODERATOR"
                 ));
 
                 // 3. Crear el Participante normal
                 repository.save(new UserJpaEntity(
-                        "user@test.com",
-                        "juan_participante",
-                        passwordEncoder.encode("user123"),
+                        "thesamba@test.com",
+                        "thesamba",
+                        passwordEncoder.encode("thesamba123"),
+                        "PARTICIPANT"
+                ));
+
+                repository.save(new UserJpaEntity(
+                        "remus@test.com",
+                        "remus",
+                        passwordEncoder.encode("remus123"),
                         "PARTICIPANT"
                 ));
 

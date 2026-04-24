@@ -10,10 +10,12 @@ public class AssignModeratorUseCase {
     }
 
     public void execute(Long roomId, Long moderatorId) {
-        // REQUISITO: Máximo 2 salas por moderador
         long count = repository.countRoomsByModeratorId(moderatorId);
         if (count >= 2) throw new RuntimeException("Este moderador ya tiene 2 salas asignadas.");
 
         repository.assignModeratorToRoom(roomId, moderatorId);
+
+        // CUMPLIMOS EL REQUISITO: Al asignar sala, su rol pasa a ser Moderador
+        repository.updateUserRole(moderatorId, "MODERATOR");
     }
 }

@@ -26,7 +26,8 @@ function App() {
   const handleLogout = () => {
     localStorage.clear();
     setUser(null);
-    window.location.href = "/login";
+    // Al poner setUser a null, React automáticamente renderiza <Navigate to="/login" />
+    // Ya no hace falta el window.location.href que rompe la experiencia SPA.
   };
 
   return (

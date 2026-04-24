@@ -29,4 +29,18 @@ public class JpaAssignModeratorRepositoryAdapter implements AssignModeratorRepos
         room.setModerator(moderator);
         roomRepository.save(room);
     }
+
+    // NUEVO MÉTODO: Implementación obligatoria de la interfaz para actualizar el rol
+    @Override
+    public void updateUserRole(Long userId, String role) {
+        // 1. Buscamos al usuario por su ID
+        UserJpaEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+
+        // 2. Le cambiamos el rol al que nos pasen por parámetro (en este caso "MODERATOR")
+        user.setRole(role);
+
+        // 3. Guardamos los cambios en la base de datos
+        userRepository.save(user);
+    }
 }
