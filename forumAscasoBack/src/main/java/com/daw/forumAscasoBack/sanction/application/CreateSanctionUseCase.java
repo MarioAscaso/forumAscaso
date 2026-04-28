@@ -15,8 +15,10 @@ public class CreateSanctionUseCase {
     }
 
     public void execute(Long userId, String type, Integer days, String reason) {
-        repository.save(userId, type, days, reason);
+        // 🔥 CORRECCIÓN: Llamamos a saveSanction en lugar de save 🔥
+        repository.saveSanction(userId, type, days, reason);
 
+        // Lógica adicional para actualizar el rol y los días del usuario en caso de baneo temporal
         if ("TEMPORARY_BAN".equals(type) && days != null) {
             UserJpaEntity user = userRepository.findById(userId).orElseThrow();
             user.setRole("BANNED");

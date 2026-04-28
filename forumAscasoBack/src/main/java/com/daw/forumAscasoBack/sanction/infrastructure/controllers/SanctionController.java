@@ -17,7 +17,6 @@ public class SanctionController {
     private final SpringDataUserRepository userRepository;
     private final SpringDataSanctionRepository sanctionRepository;
 
-    // Inyectamos todas las dependencias necesarias en el constructor
     public SanctionController(CreateSanctionUseCase createSanctionUseCase,
                               SpringDataUserRepository userRepository,
                               SpringDataSanctionRepository sanctionRepository) {
@@ -29,7 +28,15 @@ public class SanctionController {
     @PostMapping
     public ResponseEntity<String> applySanction(@RequestBody Map<String, Object> body) {
         try {
-            createSanctionUseCase.execute(body);
+            // 1. Extraemos los datos del JSON recibido (desempaquetado seguro)
+            Long userId = Long.valueOf(body.get("userId").toString());
+            String type = (String) body.get("type");
+            Integer days = body.get("days") != null ? Integer.valueOf(body.get("days").toString()) : null;
+            String reason = (String) body.get("reason");
+
+            // 2. Ahora sí, le pasamos los 4 parámetros exactos que espera nuestro UseCase
+            createSanctionUseCase.execute(userId, type, days, reason);
+
             return ResponseEntity.ok("Sanción aplicada correctamente");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -38,7 +45,6 @@ public class SanctionController {
 
     @GetMapping("/my-sanctions")
     public ResponseEntity<?> getMySanctions() {
-        // Sacamos el email del usuario que ha hecho la petición usando el Token JWT
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
         return userRepository.findByEmail(email)
