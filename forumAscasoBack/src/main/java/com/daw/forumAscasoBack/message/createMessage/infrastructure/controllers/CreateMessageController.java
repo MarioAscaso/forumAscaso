@@ -18,15 +18,20 @@ public class CreateMessageController {
         this.createMessageUseCase = createMessageUseCase;
     }
 
-    @PostMapping("/room/{roomId}")
+    // 🔥 CORRECCIÓN: Ahora escucha directamente en /api/messages 🔥
+    @PostMapping
     public ResponseEntity<Void> createMessage(
-            @PathVariable Long roomId,
-            @RequestBody Map<String, String> body,
+            @RequestBody Map<String, Object> body,
             Principal principal) {
 
         // El "principal.getName()" nos devuelve el email guardado en el JWT
         String authorEmail = principal.getName();
-        String content = body.get("content");
+
+        // Extraemos el contenido del JSON
+        String content = (String) body.get("content");
+
+        // Extraemos el roomId que React envía dentro del JSON
+        Long roomId = Long.valueOf(body.get("roomId").toString());
 
         createMessageUseCase.execute(roomId, authorEmail, content);
 

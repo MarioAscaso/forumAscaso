@@ -1,94 +1,89 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next"; // 🔥 Añadido
 
-const RoomList = () => {
+const RoomList = ({ user }) => {
+  const { t } = useTranslation(); // 🔥 Añadido
   const [rooms, setRooms] = useState([]);
-  const [favorites, setFavorites] = useState([]); // Guardará los IDs
-  const userEmail = localStorage.getItem('email');
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRooms();
-    if (userEmail) fetchFavorites();
-  }, [userEmail]);
+  useEffect(() => { fetchData(); }, [user]);
 
-  const fetchRooms = async () => {
+  const fetchData = async () => {
+    setLoading(true);
+    const token = user?.token || localStorage.getItem("token");
+    if (!token) { setLoading(false); return; }
+    const headers = { Authorization: `Bearer ${token}` };
     try {
-      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-      const res = await axios.get("http://localhost:8686/api/rooms", config);
-      setRooms(res.data);
-    } catch (err) {
-      console.error("Error al cargar salas", err);
-    }
-  };
-
-  const fetchFavorites = async () => {
-    try {
-      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-      const res = await axios.get(`http://localhost:8686/api/favorites/${userEmail}`, config);
-      setFavorites(res.data);
-    } catch (err) {
-      console.error("Error al cargar favoritos", err);
-    }
+      const [roomsRes, favsRes] = await Promise.all([
+        axios.get("http://localhost:8686/api/rooms", { headers }),
+        axios.get("http://localhost:8686/api/users/me/favorites", { headers })
+      ]);
+      setRooms(roomsRes.data);
+      setFavoriteIds(favsRes.data.map(f => f.id));
+    } catch (error) { console.error("Error cargando salas", error); }
+    finally { setLoading(false); }
   };
 
   const toggleFavorite = async (roomId) => {
+    const token = user?.token || localStorage.getItem("token");
+    if (!token) return;
     try {
-      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-      await axios.post(`http://localhost:8686/api/favorites/${userEmail}/${roomId}`, {}, config);
-      
-      // Actualizamos estado visual al instante
-      if (favorites.includes(roomId)) {
-        setFavorites(favorites.filter(id => id !== roomId));
-      } else {
-        setFavorites([...favorites, roomId]);
-      }
-    } catch (err) {
-      console.error("Error al cambiar favorito", err);
-    }
+      await axios.post(`http://localhost:8686/api/users/me/favorites/${roomId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (error) { console.error("Error al cambiar favorito", error); }
   };
 
-  const favoriteRooms = rooms.filter(room => favorites.includes(room.id));
-  const otherRooms = rooms.filter(room => !favorites.includes(room.id));
+  if (loading) return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
 
-  // Función auxiliar para renderizar la tarjeta
-  const renderRoomCard = (room, isFav) => (
+  const favoriteRooms = rooms.filter(r => favoriteIds.includes(r.id));
+  const otherRooms = rooms.filter(r => !favoriteIds.includes(r.id));
+
+  const RoomCard = ({ room, isFav }) => (
     <div className="col-md-4 mb-4" key={room.id}>
-      <div className="card h-100 shadow-sm hover-shadow transition border-0 bg-light">
+      <div className={`card h-100 shadow-sm border-0 ${isFav ? 'bg-light border-warning' : ''}`}>
         <div className="card-body">
-          <div className="d-flex justify-content-between align-items-start mb-2">
-            <h5 className="card-title fw-bold mb-0">{room.name}</h5>
-            <button 
-              onClick={() => toggleFavorite(room.id)} 
-              className={`btn btn-sm ${isFav ? 'btn-warning text-dark' : 'btn-outline-secondary'}`}
-              title="Favorito"
-            >
-              {isFav ? '★' : '☆'}
+          <div className="d-flex justify-content-between align-items-start">
+            <h5 className="card-title fw-bold text-dark">{room.name}</h5>
+            <button onClick={() => toggleFavorite(room.id)} className="btn btn-sm btn-link text-warning fs-5 p-0 text-decoration-none">
+              {isFav ? '⭐' : '☆'}
             </button>
           </div>
-          {room.isModerated && <span className="badge bg-danger mb-2">Bajo Moderación</span>}
-          <p className="card-text text-muted">{room.description || "Sin descripción"}</p>
+          <p className="card-text text-muted">{room.description}</p>
+          {room.isModerated && <span className="badge bg-info text-dark mb-3">{t('moderated')}</span>} {/* 🔥 Traducido */}
         </div>
-        <div className="card-footer bg-transparent border-0 pb-3">
-          <Link to={`/room/${room.id}`} className="btn btn-dark w-100">Entrar a la sala</Link>
+        <div className="card-footer bg-white border-0 pb-3 pt-0">
+          <Link to={`/rooms/${room.id}`} className="btn btn-dark w-100">{t('enter_room')}</Link> {/* 🔥 Traducido */}
         </div>
       </div>
     </div>
   );
 
   return (
-    <div>
+    <div className="container mt-4">
       {favoriteRooms.length > 0 && (
-        <>
-          <h2 className="mb-4 text-warning fw-bold">★ Mis Salas Favoritas</h2>
-          <div className="row">{favoriteRooms.map(r => renderRoomCard(r, true))}</div>
-          <hr className="my-5 opacity-25" />
-        </>
+        <div className="mb-5">
+          <h3 className="fw-bold mb-3">{t('fav_rooms')}</h3> {/* 🔥 Traducido */}
+          <div className="row">
+            {favoriteRooms.map(room => <RoomCard key={room.id} room={room} isFav={true} />)}
+          </div>
+        </div>
       )}
-
-      <h2 className="mb-4 fw-bold">Todas las Salas</h2>
-      <div className="row">{otherRooms.map(r => renderRoomCard(r, false))}</div>
+      <div>
+        <h3 className="fw-bold mb-3">
+          {favoriteRooms.length > 0 ? t('explore_rooms') : t('all_rooms')} {/* 🔥 Traducido */}
+        </h3>
+        <div className="row">
+          {otherRooms.map(room => <RoomCard key={room.id} room={room} isFav={false} />)}
+        </div>
+        {otherRooms.length === 0 && <p className="text-muted">{t('no_more_rooms')}</p>} {/* 🔥 Traducido */}
+      </div>
     </div>
   );
 };
+
 export default RoomList;

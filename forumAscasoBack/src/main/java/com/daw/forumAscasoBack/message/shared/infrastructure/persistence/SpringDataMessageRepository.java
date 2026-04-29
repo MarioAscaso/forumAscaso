@@ -16,4 +16,7 @@ public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEnt
 
     // NUEVO: Para el límite de 10 mensajes por semana (Anti-Spam)
     long countByAuthor_IdAndCreationDateAfter(Long authorId, LocalDateTime date);
+
+    // Añade esto dentro de tu interface SpringDataMessageRepository:
+    List<MessageJpaEntity> findByAuthor_IdOrderByCreationDateDesc(Long authorId);
 }

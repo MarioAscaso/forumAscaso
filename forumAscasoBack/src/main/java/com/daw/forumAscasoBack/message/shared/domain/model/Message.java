@@ -8,7 +8,9 @@ public class Message {
     private LocalDateTime createdAt;
     private String status;
     private Long authorId; // <-- VITAL para los baneos
-    private String authorUsername;
+
+    // 🔥 CORRECCIÓN: Se debe llamar exactamente 'username' para que React lo lea
+    private String username;
 
     // --- GETTERS Y SETTERS ---
 
@@ -27,6 +29,6 @@ public class Message {
     public Long getAuthorId() { return authorId; }
     public void setAuthorId(Long authorId) { this.authorId = authorId; }
 
-    public String getAuthorUsername() { return authorUsername; }
-    public void setAuthorUsername(String authorUsername) { this.authorUsername = authorUsername; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

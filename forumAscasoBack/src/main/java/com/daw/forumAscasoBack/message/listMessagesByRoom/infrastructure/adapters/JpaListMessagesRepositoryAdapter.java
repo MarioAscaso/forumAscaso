@@ -20,14 +20,12 @@ public class JpaListMessagesRepositoryAdapter implements ListMessagesRepositoryP
 
     @Override
     public List<Message> findByRoomId(Long roomId) {
-        // Usamos el nombre exacto de tu repositorio
         List<MessageJpaEntity> entities = jpaRepository.findByRoom_IdOrderByCreationDateAsc(roomId);
         return entities.stream().map(this::toDomain).collect(Collectors.toList());
     }
 
     @Override
     public List<Message> findPendingByRoomId(Long roomId) {
-        // Usamos el nombre exacto de tu repositorio
         List<MessageJpaEntity> entities = jpaRepository.findByRoom_IdAndStatusOrderByCreationDateAsc(roomId, "PENDING");
         return entities.stream().map(this::toDomain).collect(Collectors.toList());
     }
@@ -36,13 +34,12 @@ public class JpaListMessagesRepositoryAdapter implements ListMessagesRepositoryP
         Message message = new Message();
         message.setId(entity.getId());
         message.setContent(entity.getContent());
-
-        // AQUÍ ESTABA EL ERROR: Llamamos a tu método real (getCreationDate)
         message.setCreatedAt(entity.getCreationDate());
-
         message.setStatus(entity.getStatus());
         message.setAuthorId(entity.getAuthor().getId());
-        message.setAuthorUsername(entity.getAuthor().getUsername());
+
+        // 🔥 CORRECCIÓN: Lo guardamos usando el nuevo nombre 'username'
+        message.setUsername(entity.getAuthor().getUsername());
 
         return message;
     }

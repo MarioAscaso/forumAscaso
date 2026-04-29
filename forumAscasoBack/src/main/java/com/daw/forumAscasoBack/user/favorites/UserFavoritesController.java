@@ -1,49 +1,66 @@
 package com.daw.forumAscasoBack.user.favorites;
 
+import com.daw.forumAscasoBack.message.shared.infrastructure.persistence.SpringDataMessageRepository;
+import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.RoomJpaEntity;
+import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.SpringDataRoomRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.SpringDataUserRepository;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
-import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.SpringDataRoomRepository;
-import com.daw.forumAscasoBack.room.shared.infrastructure.persistence.RoomJpaEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/api/users/me")
+@CrossOrigin(origins = "*")
 public class UserFavoritesController {
 
     private final SpringDataUserRepository userRepository;
     private final SpringDataRoomRepository roomRepository;
+    private final SpringDataMessageRepository messageRepository;
 
-    public UserFavoritesController(SpringDataUserRepository userRepository, SpringDataRoomRepository roomRepository) {
+    public UserFavoritesController(SpringDataUserRepository userRepository,
+                                   SpringDataRoomRepository roomRepository,
+                                   SpringDataMessageRepository messageRepository) {
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
+        this.messageRepository = messageRepository;
     }
 
-    // Alternar (Toggle) de Favorito
-    @PostMapping("/{email}/{roomId}")
-    public ResponseEntity<?> toggleFavorite(@PathVariable String email, @PathVariable Long roomId) {
+    // --- 1. LÓGICA DE FAVORITOS ---
+    @PostMapping("/favorites/{roomId}")
+    @Transactional
+    public ResponseEntity<?> toggleFavorite(@PathVariable Long roomId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserJpaEntity user = userRepository.findByEmail(email).orElseThrow();
         RoomJpaEntity room = roomRepository.findById(roomId).orElseThrow();
 
-        if (user.getFavoriteRooms().contains(room)) {
-            user.getFavoriteRooms().remove(room); // Si ya es favorito, lo quita
+        boolean isFavorite = user.getFavoriteRooms().contains(room);
+        if (isFavorite) {
+            user.getFavoriteRooms().remove(room); // Si ya es favorita, la quitamos
         } else {
-            user.getFavoriteRooms().add(room); // Si no, lo añade
+            user.getFavoriteRooms().add(room); // Si no, la añadimos
         }
+
         userRepository.save(user);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of("isFavorite", !isFavorite));
     }
 
-    // Obtener IDs de salas favoritas del usuario
-    @GetMapping("/{email}")
-    public ResponseEntity<Set<Long>> getFavorites(@PathVariable String email) {
+    @GetMapping("/favorites")
+    public ResponseEntity<?> getMyFavorites() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         UserJpaEntity user = userRepository.findByEmail(email).orElseThrow();
-        Set<Long> favoriteIds = user.getFavoriteRooms().stream()
-                .map(RoomJpaEntity::getId)
-                .collect(Collectors.toSet());
-        return ResponseEntity.ok(favoriteIds);
+        return ResponseEntity.ok(user.getFavoriteRooms());
+    }
+
+    // --- 2. LÓGICA DE HISTORIAL ---
+    @GetMapping("/history")
+    public ResponseEntity<?> getMyHistory() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserJpaEntity user = userRepository.findByEmail(email).orElseThrow();
+        // Devuelve los mensajes del usuario ordenados del más reciente al más antiguo
+        return ResponseEntity.ok(messageRepository.findByAuthor_IdOrderByCreationDateDesc(user.getId()));
     }
 }
