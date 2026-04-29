@@ -58,15 +58,12 @@ public class DataInitializer {
             if (roomRepository.count() == 0) {
                 // Sala 1: No moderada
                 RoomJpaEntity general = new RoomJpaEntity("Sala General", "Sala para charlar de todo", false);
-                general.setUnderModeration(false); // Para cubrir tu otra columna
 
                 // Sala 2: Moderada (Requiere aprobación de mensajes)
                 RoomJpaEntity dudas = new RoomJpaEntity("Dudas y Consultas", "Toda pregunta debe ser aprobada", true);
-                dudas.setUnderModeration(true);
 
                 // Sala 3: No moderada
                 RoomJpaEntity offTopic = new RoomJpaEntity("Off-Topic", "Juegos, música y más", false);
-                offTopic.setUnderModeration(false);
 
                 roomRepository.saveAll(List.of(general, dudas, offTopic));
                 System.out.println("✅ Salas de prueba generadas e insertadas con éxito.");

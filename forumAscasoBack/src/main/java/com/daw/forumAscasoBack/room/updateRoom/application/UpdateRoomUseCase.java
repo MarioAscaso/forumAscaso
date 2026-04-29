@@ -11,7 +11,8 @@ public class UpdateRoomUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Sala no encontrada"));
         entity.setName(command.name());
         entity.setDescription(command.description());
-        entity.setUnderModeration(command.isUnderModeration());
+        // Usamos el nuevo método setModerated
+        entity.setModerated(command.isUnderModeration());
         repository.save(entity);
     }
 }

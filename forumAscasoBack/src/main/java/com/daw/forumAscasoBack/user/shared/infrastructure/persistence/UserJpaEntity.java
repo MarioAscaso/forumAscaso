@@ -29,7 +29,8 @@ public class UserJpaEntity {
     // Campo para la fecha de fin de baneo temporal
     private LocalDateTime banUntil;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    // MEJORA: Cambiado a LAZY para no saturar la base de datos
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_favorite_rooms",
             joinColumns = @JoinColumn(name = "user_id"),

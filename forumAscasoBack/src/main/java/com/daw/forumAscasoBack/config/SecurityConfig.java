@@ -1,6 +1,7 @@
 package com.daw.forumAscasoBack.config;
 
 import com.daw.forumAscasoBack.config.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +23,10 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
+    // MEJORA: Inyectamos la URL del frontend desde application.properties
+    @Value("${app.cors.allowed-origin}")
+    private String frontendUrl;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
@@ -41,19 +46,20 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // --- AQUÍ ESTÁ LA MAGIA QUE FALTABA ---
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Usamos BCrypt, el estándar de la industria
+        return new BCryptPasswordEncoder();
     }
-    // --------------------------------------
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+
+        // MEJORA: Usamos la variable en lugar de escribir la URL a mano
+        configuration.setAllowedOrigins(List.of(frontendUrl));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
