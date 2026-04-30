@@ -1,6 +1,5 @@
 package com.daw.forumAscasoBack.notification.infrastructure.persistence;
 
-import com.daw.forumAscasoBack.message.shared.infrastructure.persistence.MessageJpaEntity;
 import com.daw.forumAscasoBack.user.shared.infrastructure.persistence.UserJpaEntity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -13,34 +12,39 @@ public class NotificationJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // El usuario que recibe la notificación (el mencionado)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserJpaEntity user; // El usuario que recibe la mención
+    @JoinColumn(name = "recipient_id", nullable = false)
+    private UserJpaEntity recipient;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "message_id", nullable = false)
-    private MessageJpaEntity message; // El mensaje donde le mencionaron
-
+    // El texto de la alerta ("El usuario X te ha mencionado...")
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private String content;
 
     @Column(nullable = false)
     private boolean isRead = false;
 
+    @Column(nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     public NotificationJpaEntity() {}
 
-    public NotificationJpaEntity(UserJpaEntity user, MessageJpaEntity message, LocalDateTime createdAt) {
-        this.user = user;
-        this.message = message;
-        this.createdAt = createdAt;
+    public NotificationJpaEntity(UserJpaEntity recipient, String content) {
+        this.recipient = recipient;
+        this.content = content;
         this.isRead = false;
+        this.createdAt = LocalDateTime.now();
     }
 
     // Getters y Setters
     public Long getId() { return id; }
-    public UserJpaEntity getUser() { return user; }
-    public MessageJpaEntity getMessage() { return message; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setId(Long id) { this.id = id; }
+    public UserJpaEntity getRecipient() { return recipient; }
+    public void setRecipient(UserJpaEntity recipient) { this.recipient = recipient; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
