@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: 'http://localhost:8686/api'
 });
 
-// Interceptor para inyectar el token en cada petición
+// Interceptor para inyectar el token en cada petición automáticamente
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -23,3 +23,6 @@ export const createMessage = (roomId, content) => api.post(`/messages/room/${roo
 // --- RUTAS DE MODERACIÓN ---
 export const fetchPendingMessages = (roomId) => api.get(`/messages/room/${roomId}/pending`);
 export const updateMessageStatus = (messageId, status) => api.patch(`/messages/${messageId}/status`, { status });
+
+// 🔥 NUEVO: Exportamos la instancia base para poder usarla en cualquier sitio
+export default api;

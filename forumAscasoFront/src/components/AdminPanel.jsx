@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useTranslation } from "react-i18next"; // 🔥 Añadido
+import { useTranslation } from "react-i18next";
+import api from '../api/roomApi'; // 🔥 Importamos tu API configurada
 
 function AdminPanel() {
-  const { t } = useTranslation(); // 🔥 Añadido
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isModerated, setIsModerated] = useState(false);
@@ -15,46 +15,47 @@ function AdminPanel() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  const API_URL = 'http://localhost:8686/api';
-
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    const token = localStorage.getItem('token');
-    if (!token) return setLoading(false);
     try {
       const [uRes, rRes] = await Promise.all([
-        axios.get(`${API_URL}/users`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_URL}/rooms`, { headers: { Authorization: `Bearer ${token}` } })
+        api.get('/users'),
+        api.get('/rooms')
       ]);
-      setUsers(uRes.data); setRooms(rRes.data);
-    } catch (err) { setErrorMsg("Error"); }
-    finally { setLoading(false); }
+      setUsers(uRes.data); 
+      setRooms(rRes.data);
+    } catch (err) { 
+      setErrorMsg("Error cargando datos"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/rooms`, { name, description, isModerated }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.post('/rooms', { name, description, isModerated });
       setSuccessMsg('OK');
       setName(''); setDescription(''); setIsModerated(false);
       fetchData();
-    } catch (err) { setErrorMsg('Error'); }
+    } catch (err) { setErrorMsg('Error al crear sala'); }
   };
 
   const handleAssignModerator = async (e) => {
     e.preventDefault();
     try {
-      await axios.patch(`${API_URL}/rooms/${selectedRoom}/assign-moderator`, { moderatorId: selectedUser }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await api.patch(`/rooms/${selectedRoom}/assign-moderator`, { moderatorId: selectedUser });
       setSelectedUser(''); setSelectedRoom('');
       fetchData();
-    } catch (err) { setErrorMsg('Error'); }
+    } catch (err) { setErrorMsg('Error al asignar moderador'); }
   };
+
+  // 🔥 Funciones preparadas para los botones de gestión
+  const handleWarning = (userId) => console.log("Aviso para usuario:", userId);
+  const handleBan = (userId) => console.log("Ban 7 días para usuario:", userId);
+  const handleExpel = (userId) => console.log("Expulsar usuario:", userId);
 
   const renderRoleBadge = (u) => {
     const role = u.role?.toUpperCase() || 'PARTICIPANT';
@@ -66,7 +67,7 @@ function AdminPanel() {
     return <span className="badge bg-secondary">{role}</span>;
   };
 
-  if (loading) return <div className="mt-5 text-center">...</div>;
+  if (loading) return <div className="mt-5 text-center"><div className="spinner-border"></div></div>;
 
   return (
     <div className="container mt-5">
@@ -121,9 +122,9 @@ function AdminPanel() {
                 <td>{renderRoleBadge(u)}</td>
                 <td>
                   <div className="btn-group btn-group-sm">
-                    <button className="btn btn-outline-warning">{t('btn_warning')}</button>
-                    <button className="btn btn-outline-danger">{t('btn_7days')}</button>
-                    <button className="btn btn-danger">{t('btn_expel')}</button>
+                    <button onClick={() => handleWarning(u.id)} className="btn btn-outline-warning">{t('btn_warning')}</button>
+                    <button onClick={() => handleBan(u.id)} className="btn btn-outline-danger">{t('btn_7days')}</button>
+                    <button onClick={() => handleExpel(u.id)} className="btn btn-danger">{t('btn_expel')}</button>
                   </div>
                 </td>
               </tr>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next"; // 🔥 Añadido
+import { useTranslation } from "react-i18next";
+import api from "../api/roomApi"; // 🔥 Importamos tu API configurada
 
 const RoomList = ({ user }) => {
-  const { t } = useTranslation(); // 🔥 Añadido
+  const { t } = useTranslation();
   const [rooms, setRooms] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,29 +13,28 @@ const RoomList = ({ user }) => {
 
   const fetchData = async () => {
     setLoading(true);
-    const token = user?.token || localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
-    const headers = { Authorization: `Bearer ${token}` };
     try {
+      // 🔥 Peticiones súper limpias sin pasar headers manualmente
       const [roomsRes, favsRes] = await Promise.all([
-        axios.get("http://localhost:8686/api/rooms", { headers }),
-        axios.get("http://localhost:8686/api/users/me/favorites", { headers })
+        api.get("/rooms"),
+        api.get("/users/me/favorites")
       ]);
       setRooms(roomsRes.data);
       setFavoriteIds(favsRes.data.map(f => f.id));
-    } catch (error) { console.error("Error cargando salas", error); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error("Error cargando salas", error); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const toggleFavorite = async (roomId) => {
-    const token = user?.token || localStorage.getItem("token");
-    if (!token) return;
     try {
-      await axios.post(`http://localhost:8686/api/users/me/favorites/${roomId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post(`/users/me/favorites/${roomId}`);
       fetchData();
-    } catch (error) { console.error("Error al cambiar favorito", error); }
+    } catch (error) { 
+      console.error("Error al cambiar favorito", error); 
+    }
   };
 
   if (loading) return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
@@ -54,10 +53,10 @@ const RoomList = ({ user }) => {
             </button>
           </div>
           <p className="card-text text-muted">{room.description}</p>
-          {room.isModerated && <span className="badge bg-info text-dark mb-3">{t('moderated')}</span>} {/* 🔥 Traducido */}
+          {room.isModerated && <span className="badge bg-info text-dark mb-3">{t('moderated')}</span>}
         </div>
         <div className="card-footer bg-white border-0 pb-3 pt-0">
-          <Link to={`/rooms/${room.id}`} className="btn btn-dark w-100">{t('enter_room')}</Link> {/* 🔥 Traducido */}
+          <Link to={`/rooms/${room.id}`} className="btn btn-dark w-100">{t('enter_room')}</Link>
         </div>
       </div>
     </div>
@@ -67,7 +66,7 @@ const RoomList = ({ user }) => {
     <div className="container mt-4">
       {favoriteRooms.length > 0 && (
         <div className="mb-5">
-          <h3 className="fw-bold mb-3">{t('fav_rooms')}</h3> {/* 🔥 Traducido */}
+          <h3 className="fw-bold mb-3">{t('fav_rooms')}</h3>
           <div className="row">
             {favoriteRooms.map(room => <RoomCard key={room.id} room={room} isFav={true} />)}
           </div>
@@ -75,12 +74,12 @@ const RoomList = ({ user }) => {
       )}
       <div>
         <h3 className="fw-bold mb-3">
-          {favoriteRooms.length > 0 ? t('explore_rooms') : t('all_rooms')} {/* 🔥 Traducido */}
+          {favoriteRooms.length > 0 ? t('explore_rooms') : t('all_rooms')}
         </h3>
         <div className="row">
           {otherRooms.map(room => <RoomCard key={room.id} room={room} isFav={false} />)}
         </div>
-        {otherRooms.length === 0 && <p className="text-muted">{t('no_more_rooms')}</p>} {/* 🔥 Traducido */}
+        {otherRooms.length === 0 && <p className="text-muted">{t('no_more_rooms')}</p>}
       </div>
     </div>
   );

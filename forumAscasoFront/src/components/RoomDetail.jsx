@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import { useTranslation } from "react-i18next"; // 🔥 Añadido para el Multilingüe
+import { useTranslation } from "react-i18next";
+import api from "../api/roomApi"; // 🔥 Importamos tu API configurada
 
 const stringToColor = (str) => {
   if (!str) return '#000000';
@@ -18,7 +18,7 @@ const stringToColor = (str) => {
 };
 
 const RoomDetail = ({ user }) => {
-  const { t } = useTranslation(); // 🔥 Iniciamos el traductor
+  const { t } = useTranslation();
   const { id } = useParams();
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -30,14 +30,10 @@ const RoomDetail = ({ user }) => {
   }, [id, user]);
 
   const fetchRoomAndMessages = async () => {
-    const token = user?.token || localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const headers = { Authorization: `Bearer ${token}` };
       const [roomRes, msgRes] = await Promise.all([
-        axios.get(`http://localhost:8686/api/rooms/${id}`, { headers }),
-        axios.get(`http://localhost:8686/api/messages/room/${id}`, { headers })
+        api.get(`/rooms/${id}`),
+        api.get(`/messages/room/${id}`)
       ]);
       
       setRoom(roomRes.data);
@@ -51,17 +47,15 @@ const RoomDetail = ({ user }) => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    const token = user?.token || localStorage.getItem("token");
     const email = user?.email || localStorage.getItem("email");
-    
-    if (!token || !email) return;
+    if (!email) return;
 
     try {
-      await axios.post(`http://localhost:8686/api/messages`, {
+      await api.post(`/messages`, {
         roomId: id,
         email: email,
         content: newMessage
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       
       setNewMessage("");
       fetchRoomAndMessages();
@@ -85,7 +79,6 @@ const RoomDetail = ({ user }) => {
           <p className="text-muted text-center mt-4">{t('no_msgs')}</p> 
         ) : (
           messages.map((m) => {
-            // 🔥 BÚSQUEDA INTELIGENTE: Busca el nombre en la raíz o dentro del objeto autor
             const authorName = m.username || m.author?.username || 'usuario';
 
             return (
